@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TN Civic Voice | Official</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .glass { background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.15); }
+        .screen { display: none; height: 100vh; width: 100vw; }
+        .screen.active { display: flex; }
+        .tab { display: none; }
+        .tab.active { display: block; }
+        input, select, textarea { background: rgba(255, 255, 255, 0.1) !important; color: white !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; }
+        select option { color: black; }
+        .nav-btn { transition: all 0.3s; padding: 12px; border-radius: 12px; width: 100%; text-align: left; }
+        .nav-btn:hover { background: rgba(255,255,255,0.1); }
+        .nav-btn.active { background: #2563eb; color: white; }
+    </style>
+</head>
+<body>
+
+<div id="scr-login" class="screen active items-center justify-center">
+    <div class="glass p-10 rounded-[2.5rem] w-full max-w-md text-center">
+        <h1 class="text-3xl font-extrabold mb-2">TN Civic Voice</h1>
+        <p class="text-slate-400 text-sm mb-8">Official Citizen Portal</p>
+        <input id="in-name" placeholder="Full Name" class="w-full p-4 mb-3 rounded-2xl outline-none">
+        <input id="in-phone" placeholder="Mobile Number" class="w-full p-4 mb-6 rounded-2xl outline-none">
+        <button onclick="goProfile()" class="w-full bg-blue-600 p-4 rounded-2xl font-bold hover:bg-blue-700 transition">Continue</button>
+    </div>
+</div>
+
+<div id="scr-profile" class="screen items-center justify-center">
+    <div class="glass p-10 rounded-[2.5rem] w-full max-w-md">
+        <h2 class="text-2xl font-bold mb-6">Profile Setup</h2>
+        <div class="space-y-4">
+            <select id="sel-gender" class="w-full p-4 rounded-2xl outline-none">
+                <option>Male</option><option>Female</option><option>Other</option>
+            </select>
+            <select id="sel-district" onchange="loadTaluk()" class="w-full p-4 rounded-2xl outline-none">
+                <option value="">Select District</option>
+            </select>
+            <select id="sel-taluk" class="w-full p-4 rounded-2xl outline-none">
+                <option value="">Select Taluk</option>
+            </select>
+        </div>
+        <button onclick="goApp()" class="w-full bg-blue-600 p-4 mt-8 rounded-2xl font-bold">Enter Portal</button>
+    </div>
+</div>
+
+<div id="scr-app" class="screen">
+    <aside class="w-72 glass m-4 rounded-[2rem] p-6 hidden md:flex flex-col">
+        <div class="flex items-center gap-2 mb-10 text-blue-500 font-black text-xl">
+            <i data-lucide="megaphone"></i> CIVIC VOICE
+        </div>
+        <nav class="space-y-2 flex-grow">
+            <button id="btn-dash" onclick="showTab('dash')" class="nav-btn active flex items-center gap-3"><i data-lucide="layout"></i> Dashboard</button>
+            <button id="btn-feed" onclick="showTab('feed')" class="nav-btn flex items-center gap-3"><i data-lucide="rss"></i> Live Feed</button>
+            <button id="btn-heat" onclick="showTab('heat')" class="nav-btn flex items-center gap-3"><i data-lucide="map"></i> Heatmap</button>
+        </nav>
+        <div class="mt-auto glass p-4 rounded-2xl">
+            <p id="disp-name" class="font-bold text-blue-400"></p>
+            <p id="disp-loc" class="text-[10px] text-slate-500 font-bold uppercase"></p>
+            <button onclick="logout()" class="mt-4 w-full bg-red-500/20 text-red-500 border border-red-500/20 p-2 rounded-xl text-xs font-bold hover:bg-red-500 hover:text-white transition">Sign Out</button>
+        </div>
+    </aside>
+
+    <div class="flex-grow p-8 overflow-y-auto">
+        <div class="flex justify-between items-center mb-10">
+            <h2 id="hdr-title" class="text-2xl font-black uppercase tracking-widest">Dashboard</h2>
+            <button onclick="openModal()" class="bg-white text-black px-6 py-3 rounded-2xl font-black text-xs hover:bg-blue-600 hover:text-white transition shadow-xl">+ NEW COMPLAINT</button>
+        </div>
+
+        <div id="dash" class="tab active">
+            <div class="glass p-8 rounded-[2rem] border-l-4 border-blue-500 mb-8 inline-block min-w-[200px]">
+                <p class="text-xs font-bold text-slate-500 uppercase">My Submissions</p>
+                <p id="count" class="text-4xl font-black">0</p>
+            </div>
+            <div id="dashList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+
+        <div id="feed" class="tab">
+            <div id="feedList" class="max-w-2xl mx-auto space-y-6"></div>
+        </div>
+
+        <div id="heat" class="tab">
+            <div class="glass h-[500px] rounded-[3rem] relative overflow-hidden flex items-center justify-center">
+                <div class="text-center opacity-20"><i data-lucide="map" class="w-20 h-20 mx-auto mb-4"></i><p class="font-black text-2xl">DENSITY MAP</p></div>
+                <div id="heatDots" class="absolute inset-0"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="modal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+    <div class="glass p-8 rounded-[2.5rem] w-full max-w-lg shadow-2xl">
+        <h3 id="modal-head" class="text-xl font-bold mb-6">File a Complaint</h3>
+        <input id="cTitle" placeholder="What is the issue?" class="w-full p-4 mb-3 rounded-2xl outline-none">
+        <textarea id="cDesc" placeholder="Describe the details..." class="w-full p-4 mb-3 rounded-2xl outline-none h-32"></textarea>
+        
+        <div class="mb-4">
+            <label class="block p-4 border border-white/10 rounded-2xl text-center cursor-pointer hover:bg-white/5 transition">
+                <input type="file" id="cImg" class="hidden" onchange="previewImg()">
+                <span id="img-status" class="text-xs font-bold text-slate-400">UPLOAD PHOTO</span>
+            </label>
+            <img id="img-preview" class="mt-4 rounded-2xl hidden h-48 w-full object-cover border border-white/10">
+        </div>
+
+        <div class="flex gap-4">
+            <button onclick="closeModal()" class="flex-1 font-bold text-slate-500">Cancel</button>
+            <button onclick="addComplaint()" class="flex-1 bg-blue-600 p-4 rounded-2xl font-bold shadow-lg shadow-blue-500/20">Submit</button>
+        </div>
+    </div>
+</div>
+
+<script>
+lucide.createIcons();
+
+const districts = {
+    "Madurai": ["Melur", "Usilampatti", "Madurai North", "South"],
+    "Chennai": ["Egmore", "Velachery", "Mylapore", "T Nagar"],
+    "Coimbatore": ["North", "South", "Pollachi"]
+};
+
+let complaints = [];
+let editingId = null;
+
+/* INITIALIZE DISTRICTS */
+const dSel = document.getElementById("sel-district");
+Object.keys(districts).forEach(d => {
+    let o = document.createElement("option"); o.text = d; o.value = d; dSel.add(o);
+});
+
+/* NAVIGATION */
+function goProfile() {
+    const name = document.getElementById("in-name").value;
+    const phone = document.getElementById("in-phone").value;
+    if (!name || !phone) return alert("Please enter name and phone");
+    document.getElementById("scr-login").classList.remove("active");
+    document.getElementById("scr-profile").classList.add("active");
+}
+
+function loadTaluk() {
+    const tSel = document.getElementById("sel-taluk");
+    const dist = document.getElementById("sel-district").value;
+    tSel.innerHTML = '<option value="">Select Taluk</option>';
+    if (districts[dist]) {
+        districts[dist].forEach(t => {
+            let o = document.createElement("option"); o.text = t; o.value = t; tSel.add(o);
+        });
+    }
+}
+
+function goApp() {
+    const dist = document.getElementById("sel-district").value;
+    const taluk = document.getElementById("sel-taluk").value;
+    if (!dist || !taluk) return alert("Select your location");
+
+    document.getElementById("disp-name").innerText = document.getElementById("in-name").value;
+    document.getElementById("disp-loc").innerText = `${dist} | ${taluk}`;
+    
+    document.getElementById("scr-profile").classList.remove("active");
+    document.getElementById("scr-app").classList.add("active");
+}
+
+function showTab(t) {
+    document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+    document.querySelectorAll(".nav-btn").forEach(x => x.classList.remove("active"));
+    
+    document.getElementById(t).classList.add("active");
+    document.getElementById("btn-" + t).classList.add("active");
+    document.getElementById("hdr-title").innerText = t;
+    lucide.createIcons();
+}
+
+/* MODAL & COMPLAINTS */
+function openModal(id = null) {
+    editingId = id;
+    const modal = document.getElementById("modal");
+    modal.classList.replace("hidden", "flex");
+    
+    if (id !== null) {
+        const c = complaints.find(x => x.id === id);
+        document.getElementById("cTitle").value = c.title;
+        document.getElementById("cDesc").value = c.desc;
+        document.getElementById("modal-head").innerText = "Edit Complaint";
+    } else {
+        document.getElementById("cTitle").value = "";
+        document.getElementById("cDesc").value = "";
+        document.getElementById("img-preview").classList.add("hidden");
+        document.getElementById("img-status").innerText = "UPLOAD PHOTO";
+        document.getElementById("modal-head").innerText = "File a Complaint";
+    }
+}
+
+function closeModal() { document.getElementById("modal").classList.replace("flex", "hidden"); }
+
+function previewImg() {
+    const file = document.getElementById("cImg").files[0];
+    const reader = new FileReader();
+    reader.onload = e => {
+        const p = document.getElementById("img-preview");
+        p.src = e.target.result;
+        p.classList.remove("hidden");
+        document.getElementById("img-status").innerText = "PHOTO LOADED ✅";
+    };
+    reader.readAsDataURL(file);
+}
+
+function addComplaint() {
+    const title = document.getElementById("cTitle").value;
+    const desc = document.getElementById("cDesc").value;
+    const img = document.getElementById("img-preview").src;
+
+    if (!title) return alert("Title required");
+
+    if (editingId !== null) {
+        const index = complaints.findIndex(x => x.id === editingId);
+        complaints[index] = { ...complaints[index], title, desc, img };
+    } else {
+        complaints.push({ id: Date.now(), title, desc, img });
+    }
+
+    closeModal();
+    render();
+}
+
+/* RENDER */
+function render() {
+    document.getElementById("count").innerText = complaints.length;
+    const dash = document.getElementById("dashList");
+    const feed = document.getElementById("feedList");
+    const heat = document.getElementById("heatDots");
+
+    dash.innerHTML = ""; feed.innerHTML = ""; heat.innerHTML = "";
+
+    complaints.forEach(c => {
+        // Dash Card
+        dash.innerHTML += `
+            <div onclick="openModal(${c.id})" class="glass p-6 rounded-2xl cursor-pointer hover:border-blue-500 transition">
+                <h4 class="font-bold text-blue-400">${c.title}</h4>
+                <p class="text-xs text-slate-400 mt-1 truncate">${c.desc}</p>
+            </div>`;
+        
+        // Feed Card
+        feed.innerHTML += `
+            <div class="glass p-6 rounded-[2.5rem] overflow-hidden">
+                <h4 class="text-xl font-bold mb-2">${c.title}</h4>
+                <p class="text-slate-400 text-sm mb-4">${c.desc}</p>
+                ${c.img.startsWith('data') ? `<img src="${c.img}" class="w-full h-64 object-cover rounded-3xl">` : ''}
+            </div>`;
+        
+        // Heat Dots
+        heat.innerHTML += `<div class="absolute bg-red-600/20 blur-2xl rounded-full" style="top:${Math.random()*70}%;left:${Math.random()*70}%;width:150px;height:150px"></div>`;
+    });
+    lucide.createIcons();
+}
+
+function logout() { location.reload(); }
+</script>
+
+</body>
+</html>
